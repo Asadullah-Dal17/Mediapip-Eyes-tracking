@@ -16,21 +16,21 @@ with mp_face_mesh.FaceMesh(
         # converting color space from BGR to RGB 
         rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
         # getting the frame width 
-        width, height = frame[:2]
+        height, width = frame.shape[:2]
+        # print(width, height)
         rgb_frame.flags.writeable=False
         results = face_mesh.process(rgb_frame)
+        mesh_points_list =[]
         if results.multi_face_landmarks:
-             print(type(results.multi_face_landmarks))
-
-
-            #  break
-
-
-            # for face_marks in results.multi_face_landmarks:
-            #     # print(face_marks)
-            # break
-
+            for Ids ,marks in enumerate(results.multi_face_landmarks[0].landmark):
+                # adding land mark to list with its id or indes number
+                mesh_points_list.append([Ids, (int(marks.x*width), int(marks.y*height))])
+                cv.circle(frame,(int(marks.x*width), int(marks.y*height)), 2, (0,0,255),-1)
+ 
+        
         cv.imshow('camera', frame)
+        
+        # print(mesh_points_list[0])
         key = cv.waitKey(1)
         if key ==ord('q'):
             break
