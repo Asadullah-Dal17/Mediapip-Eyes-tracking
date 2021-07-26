@@ -8,8 +8,8 @@ Answer: the Dlib face detection and landmark detection, implementation is quite,
 
 ## TODO 
 
-- [ ] *Face Detection*
-- [ ] *Landmark detection*
+- [x] *Face mesh*
+- [x] *Landmark detection*
 - [ ] *Eye:eye::eye: Extracting Landmarks only*
 - [ ] *Eyes:eye::eye: Blinking Detector*
 - [ ] *Extracting Eyes using Masking Techniques*
