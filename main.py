@@ -2,15 +2,17 @@ import cv2 as cv
 import mediapipe as mp
 
 mp_face_mesh = mp.solutions.face_mesh
+LEFT_EYES_POINTS = [33, 7 , 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161 , 246]
 
 camera = cv.VideoCapture(0)
-def landmarks_detector(image, results):
+def landmarks_detector(image, results, draw=False):
     mesh_points_list =[]
     height, width = image.shape[:2]
     for Ids ,marks in enumerate(results.multi_face_landmarks[0].landmark):
         # adding land mark to list with its id or indes number
         mesh_points_list.append([Ids, (int(marks.x*width), int(marks.y*height))])
-        cv.circle(image,(int(marks.x*width), int(marks.y*height)), 2, (0,0,255),-1)
+        if draw==True:
+            cv.circle(image,(int(marks.x*width), int(marks.y*height)), 2, (0,0,255),-1)
     return image, mesh_points_list
 
 
@@ -31,8 +33,17 @@ with mp_face_mesh.FaceMesh(
         results = face_mesh.process(rgb_frame)
         if results.multi_face_landmarks:
             image, points = landmarks_detector(rgb_frame, results)
+            # for p in points:
+            #     print(p)
+            for ind in LEFT_EYES_POINTS:
+                # p = 150+ind
+                cv.circle(frame, points[ind][1], 2, (0,255,0), -1)
 
-            cv.imshow('camera', image)
+            # cv.circle(frame, )
+
+
+
+            cv.imshow('camera', frame)
         else:
             cv.imshow('camera', frame)
         
