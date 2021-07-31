@@ -2,6 +2,7 @@
 import cv2 as cv 
 import mediapipe as mp
 import csv 
+font = cv.FONT_HERSHEY_COMPLEX
 file_path = 'selected_landmarks.csv'
 with open(file_path, 'r') as csv_file:
     data_list= list(csv.reader(csv_file))
@@ -29,27 +30,32 @@ def landmarks_detector(image, results, draw=False):
 def blink_ratio(frame,landmarks, eye_points):
     # horizontal line data 
     hx, hy = landmarks[eye_points[0]][1]
+    
     hx1, hy1 = landmarks[eye_points[7]][1]
-    second_x,_ = landmarks[eye_points[12]][1]
+    # Top_Vertical Points 
+    second_x,vy11 = landmarks[eye_points[12]][1]
     first_x,vy = landmarks[eye_points[11]][1]
     padding = int((first_x -second_x)/2)
-    print(padding)
-    cv.circle(frame, (first_x+padding, vy ), 2,(0,255,255), -1) 
-    cv.circle(frame, (hx,hy ), 2,(0,255,255), -1)
-    cv.circle(frame, (hx1,hy1 ), 2,(0,255,255), -1)
+    # bottom Vertical Point 
+    vx1, vy1 = landmarks[eye_points[4]][1]
+    # print(padding)
+    # cv.circle(frame, (first_x+padding, vy ), 4,(0,255,255), -1) 
+    # cv.circle(frame, (hx,hy ), 2,(0,255,255), -1)
+    # cv.circle(frame, (hx1,hy1 ), 2,(0,255,255), -1)
+    # cv.circle(frame, (second_x,vy11 ), 2,(0,255,255), -1)
     cv.line(frame, (hx, hy), (hx1, hy1), (255,0,0),2)
-    # cv.line(frame, , (second_x+pad_to_center,first_y ), (255,0,0))
+    cv.line(frame, (vx1, vy1), (second_x+padding,vy ), (0,255,255))
+    eye_pixel_with = hx1-hx 
+    # print(h_px)
+    eye_pixel_height = vy1 -vy
+    ratio = eye_pixel_with/ eye_pixel_height
+    # print(ratio)
 
 
 
-    return frame
+    return ratio
     # print('x , y ', x,' , ',y , 'x1 , y1 ', x1, ' , ',y1)
     
-
-
-
-
-
 with mp_face_mesh.FaceMesh(
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5) as face_mesh:
@@ -82,11 +88,11 @@ with mp_face_mesh.FaceMesh(
             first_x, first_y = points[LEFT_EYE[11]][1]
             # cv.circle(frame, (points[LEFT_EYE[11]][1]), 2,(255,255,0), -1)
             # cv.circle(frame, (points[LEFT_EYE[12]][1]), 2,(0,255,0), -1)
-            frame=blink_ratio(frame ,points, LEFT_EYE)
+            ratio=blink_ratio(frame ,points, LEFT_EYE)
             second_x = points[LEFT_EYE[12]][1][0]
             pad_to_center = int((first_x -second_x)/2)
             cv.circle(frame, (second_x+pad_to_center,first_y ), 1,(255,0,255), -1) 
-            print(" te ",pad_to_center)
+            # print(" te ",pad_to_center)
             lf_x = points[LEFT_EYE[0]][1]
             lf_x1 = points[LEFT_EYE[7]][1][0]
 
@@ -94,6 +100,10 @@ with mp_face_mesh.FaceMesh(
             y1 = bottom_point[1]
 
             dif =(lf_x1-lf_x[0])/(y-y1)
+            if ratio>5:
+                print("blink")
+                cv.putText(frame, "BLINK :)", (70, 70), font, 0.7, (0, 255,0), 2)
+
             # print(f'y: {y} - y1 {y1} = {y-y1} || x: {lf_x[0]} - y1 {lf_x1} = {lf_x1-lf_x[0]} :ratio : {dif}' )
             # cv.line(frame, top_point, (second_x+pad_to_center,first_y ), (255,0,0))
 
