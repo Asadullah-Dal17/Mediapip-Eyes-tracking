@@ -16,3 +16,9 @@ Answer: the Dlib face detection and landmark detection, implementation is quite,
 - [ ] *Extracting Eyes using Masking Techniques*
 - [ ] *Estimating Position of Eyes :eye::eye:*
 
+### Eyes Landmarks
+
+| Right_Eye |  362 |  382 |  381 |  380 |  374 |  373 | 390 |  249 |  263 |  466 |  388 |  387 |  386 |  385 | 384   |  398   |
+|-----------|------|------|------|------|------|------|------|------|------|------|------|------|------|------|-------|--------|
+| Left_Eye  |  33  |  7   |  163 |  144 |  145 |  153 |  154 |  155 |  133 |  173 |  157 |  158 |  159 |  160 |  161  |  246 |
+
