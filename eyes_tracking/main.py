@@ -2,13 +2,14 @@
 import cv2 as cv 
 import mediapipe as mp
 import csv 
+import numpy as np
 font = cv.FONT_HERSHEY_COMPLEX
 file_path = 'selected_landmarks.csv'
 with open(file_path, 'r') as csv_file:
     data_list= list(csv.reader(csv_file))
     LEFT_EYE =[int(i) for i in data_list[1][1:]]
     RIGHT_EYE = [int(i) for i in data_list[0][1:]]
-    print(RIGHT_EYE)
+    # print(RIGHT_EYE)
 mp_face_mesh = mp.solutions.face_mesh
 
 camera = cv.VideoCapture(0)
@@ -20,7 +21,6 @@ def landmarks_detector(image, results, draw=False):
     height, width = image.shape[:2]
     for Ids ,marks in enumerate(results.multi_face_landmarks[0].landmark):
         # adding land mark to list with its id or indes number
-        
         mesh_points_list.append([Ids, (int(marks.x*width), int(marks.y*height))])
         if draw==True:
             cv.circle(image,(int(marks.x*width), int(marks.y*height)), 2, (0,0,255),-1)
@@ -39,30 +39,54 @@ def blink_ratio(frame,landmarks, eye_points, right_eye=False):
     if right_eye:
         second_x,vy11 = landmarks[eye_points[13]][1]
         first_x,vy = landmarks[eye_points[12]][1]
-        cv.circle(frame, ( landmarks[eye_points[13]][1] ), 2,(0,255,0), -1)
-        cv.circle(frame, ( landmarks[eye_points[12]][1] ), 2,(0,0,255), -1) 
+        # cv.circle(frame, ( landmarks[eye_points[13]][1] ), 2,(0,255,0), -1)
+        # cv.circle(frame, ( landmarks[eye_points[12]][1] ), 2,(0,0,255), -1) 
         padding = int((first_x- second_x)/2)
-        cv.line(frame, (vx1, vy1), (second_x+padding,vy ), (0,0,255),2)
+        # cv.line(frame, (vx1, vy1), (second_x+padding,vy ), (0,0,255),2)
     else:
         padding = int((first_x -second_x)/2)
-        cv.line(frame, (vx1, vy1), (second_x+padding,vy ), (0,255,255))
-
-        print("left")
+        # cv.line(frame, (vx1, vy1), (second_x+padding,vy ), (0,255,255))
    
-    cv.line(frame, (hx, hy), (hx1, hy1), (0,255,0),2)
+    # cv.line(frame, (hx, hy), (hx1, hy1), (0,255,0),2)
     eye_pixel_with = hx1-hx 
     # print(h_px)
     eye_pixel_height = vy1 -vy
     ratio = eye_pixel_with/ eye_pixel_height
 
     return ratio
-    # print('x , y ', x,' , ',y , 'x1 , y1 ', x1, ' , ',y1)
+def eye_position_estimator(frame, landmarks, left_eye, right_eye):
+    frame = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    right_points = [landmarks[i][1] for i in left_eye]
+    left_points = [landmarks[i][1] for i in right_eye]
+
+    # height, width = frame.shape[:2]
+    mask = np.zeros((frame.shape), dtype=np.uint8)
+    maxX = (max(left_points, key=lambda item: item[0]))[0]
+    minX = (min(left_points, key=lambda item: item[0]))[0]
+    maxY = (max(left_points, key=lambda item: item[1]))[1]
+    minY = (min(left_points, key=lambda item: item[1]))[1]
+    
+    # print(eye)
+
+    left_np = np.array(left_points, dtype=np.int32)
+    right_np = np.array(right_points, dtype=np.int32)
+
+
+    # Fill the Region of Eye on the mask
+    cv.fillPoly(mask, [right_np], 255)
+    cv.fillPoly(mask, [left_np], 255)
+    eye = cv.bitwise_and(frame, frame, mask=mask)
+
+
+    cv.imshow('mask', eye)
+    return mask
+# print('x , y ', x,' , ',y , 'x1 , y1 ', x1, ' , ',y1)
 counter=0
 last_count=0
 last_ratio =0
 with mp_face_mesh.FaceMesh(
-    min_detection_confidence=0.5,
-    min_tracking_confidence=0.5) as face_mesh:
+    min_detection_confidence=0.7,
+    min_tracking_confidence=0.7) as face_mesh:
     while True:
         ret, frame = camera.read()
         
@@ -80,22 +104,17 @@ with mp_face_mesh.FaceMesh(
             image, points = landmarks_detector(rgb_frame, results)
             # Draw the all Landmarks 
             # [cv.circle(frame, land[1],2, (0,250,50),-1) for land in points]
-            
             #Drwing All Eyes Points 
             # [cv.circle(frame, (points[pos][1]), 1,(0,0,255), -1) for pos in LEFT_EYE]
             # [cv.circle(frame, (points[pos][1]), 1,(255,0,255), -1) for pos in RIGHT_EYE]
             
-            top_point =points[LEFT_EYE[4]][1]
-            bottom_point=points[LEFT_EYE[11]][1]
-            lfx=points[LEFT_EYE[11]][1][0]
-            first_x, first_y = points[LEFT_EYE[11]][1]
-            # cv.circle(frame, (points[LEFT_EYE[11]][1]), 2,(255,255,0), -1)
-            # cv.circle(frame, (points[LEFT_EYE[12]][1]), 2,(0,255,0), -1)
+            # Eyes Tracking 
+            eye_position_estimator(frame, points, LEFT_EYE, RIGHT_EYE)
+            # eye_position_estimator(frame, points, LEFT_EYE)
+
+            # Eyes Blinking Detector 
             right_ratio=blink_ratio(frame ,points, RIGHT_EYE, right_eye=True)
             left_ratio=blink_ratio(frame ,points, LEFT_EYE)
-            second_x = points[LEFT_EYE[12]][1][0]
-            pad_to_center = int((first_x -second_x)/2)
-            cv.circle(frame, (second_x+pad_to_center,first_y ), 1,(255,0,255), -1) 
             ratio = (right_ratio +left_ratio)/2
             cv.putText(frame, f'Ratio: {round(ratio,3)}', (40,40), font, 0.5, (0,255,0),2 )
             cv.putText(frame, f'Last_ratio: {round(last_ratio,3)} :: last count: {last_count}', (40,55), font, 0.5, (0,255,0),2 )
@@ -103,7 +122,6 @@ with mp_face_mesh.FaceMesh(
                 counter +=1
                 last_count= counter
                 last_ratio = ratio
-                
                 print("blink")
                 cv.putText(frame, "BLINK :) ", (70, 70), font, 0.7, (0, 255,0), 2)
             else: 
