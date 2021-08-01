@@ -57,7 +57,9 @@ def blink_ratio(frame,landmarks, eye_points, right_eye=False):
 
     return ratio
     # print('x , y ', x,' , ',y , 'x1 , y1 ', x1, ' , ',y1)
-    
+counter=0
+last_count=0
+last_ratio =0
 with mp_face_mesh.FaceMesh(
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5) as face_mesh:
@@ -76,7 +78,8 @@ with mp_face_mesh.FaceMesh(
         results = face_mesh.process(rgb_frame)
         if results.multi_face_landmarks:
             image, points = landmarks_detector(rgb_frame, results)
-            [cv.circle(frame, land[1],2, (0,250,50),-1) for land in points]
+            # Draw the all Landmarks 
+            # [cv.circle(frame, land[1],2, (0,250,50),-1) for land in points]
             
             #Drwing All Eyes Points 
             # [cv.circle(frame, (points[pos][1]), 1,(0,0,255), -1) for pos in LEFT_EYE]
@@ -88,20 +91,23 @@ with mp_face_mesh.FaceMesh(
             first_x, first_y = points[LEFT_EYE[11]][1]
             # cv.circle(frame, (points[LEFT_EYE[11]][1]), 2,(255,255,0), -1)
             # cv.circle(frame, (points[LEFT_EYE[12]][1]), 2,(0,255,0), -1)
-            ratio=blink_ratio(frame ,points, RIGHT_EYE, right_eye=True)
-            # ratio=blink_ratio(frame ,points, LEFT_EYE)
+            right_ratio=blink_ratio(frame ,points, RIGHT_EYE, right_eye=True)
+            left_ratio=blink_ratio(frame ,points, LEFT_EYE)
             second_x = points[LEFT_EYE[12]][1][0]
             pad_to_center = int((first_x -second_x)/2)
             cv.circle(frame, (second_x+pad_to_center,first_y ), 1,(255,0,255), -1) 
-            # print(" te ",pad_to_center)
-            lf_x = points[LEFT_EYE[0]][1]
-            lf_x1 = points[LEFT_EYE[7]][1][0]
-            y = top_point[1]
-            y1 = bottom_point[1]
-            dif =(lf_x1-lf_x[0])/(y-y1)
+            ratio = (right_ratio +left_ratio)/2
+            cv.putText(frame, f'Ratio: {round(ratio,3)}', (40,40), font, 0.5, (0,255,0),2 )
+            cv.putText(frame, f'Last_ratio: {round(last_ratio,3)} :: last count: {last_count}', (40,55), font, 0.5, (0,255,0),2 )
             if ratio>5:
+                counter +=1
+                last_count= counter
+                last_ratio = ratio
+                
                 print("blink")
-                cv.putText(frame, "BLINK :)", (70, 70), font, 0.7, (0, 255,0), 2)
+                cv.putText(frame, "BLINK :) ", (70, 70), font, 0.7, (0, 255,0), 2)
+            else: 
+                counter =0
 
             # print(f'y: {y} - y1 {y1} = {y-y1} || x: {lf_x[0]} - y1 {lf_x1} = {lf_x1-lf_x[0]} :ratio : {dif}' )
             # cv.line(frame, top_point, (second_x+pad_to_center,first_y ), (255,0,0))
