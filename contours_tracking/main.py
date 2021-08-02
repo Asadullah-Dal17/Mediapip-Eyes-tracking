@@ -1,12 +1,7 @@
-
-from typing import Coroutine
 import cv2 as cv 
 import mediapipe as mp
 import csv 
-import numpy as np
-
-def nothing(x):
-    pass 
+import numpy as np 
 font = cv.FONT_HERSHEY_COMPLEX
 file_path = 'selected_landmarks.csv'
 with open(file_path, 'r') as csv_file:
@@ -15,7 +10,6 @@ with open(file_path, 'r') as csv_file:
     RIGHT_EYE = [int(i) for i in data_list[0][1:]]
     # print(RIGHT_EYE)
 mp_face_mesh = mp.solutions.face_mesh
-
 
 camera = cv.VideoCapture(1)
 # land marks extarctor function 
@@ -91,8 +85,6 @@ def extracting_eyes(frame, landmarks, left_eye, right_eye):
     right_eye_cropped = eye[r_min_y:r_max_y, r_min_x:r_max_x]
     # cv.imshow('eye', left_eye_cropped)
     cv.imshow('right eye', right_eye_cropped)
-
-
     cv.imshow('mask', eye)
     return right_eye_cropped, left_eye_cropped
 def position_estimator(frame,eye_image):
@@ -157,10 +149,6 @@ with mp_face_mesh.FaceMesh(
                 cv.putText(frame, "BLINK :) ", (70, 70), font, 0.7, (0, 255,0), 2)
             else: 
                 counter =0
-
-            # print(f'y: {y} - y1 {y1} = {y-y1} || x: {lf_x[0]} - y1 {lf_x1} = {lf_x1-lf_x[0]} :ratio : {dif}' )
-            # cv.line(frame, top_point, (second_x+pad_to_center,first_y ), (255,0,0))
-
         cv.imshow('camera', frame)
         key = cv.waitKey(10)
         if key ==ord('q'):
