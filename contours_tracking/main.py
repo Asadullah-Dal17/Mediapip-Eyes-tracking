@@ -11,7 +11,7 @@ with open(file_path, 'r') as csv_file:
     # print(RIGHT_EYE)
 mp_face_mesh = mp.solutions.face_mesh
 
-camera = cv.VideoCapture(1)
+
 # land marks extarctor function 
 def landmarks_detector(image, results, draw=False):
     # creating empty list 
@@ -101,6 +101,31 @@ def position_estimator(frame,eye_image):
     images = np.hstack((second_part, first_part,third_part))
     cv.imshow('stack', images)
     cv.imshow('threshed', threshed_eye)
+    estimated_pos =pixel_counter(first_part, second_part, third_part)
+    return estimated_pos
+
+# Pixel Counter Functio
+def pixel_counter(first_part, second_part, third_part):
+    right_part = np.sum(first_part==0)
+    center_part = np.sum(second_part==0)
+    left_part = np.sum(third_part==0)
+    eye_parts = [right_part, center_part, left_part]
+    
+    maxIndex =eye_parts.index(max(eye_parts))
+    posEye = ''
+
+    if maxIndex == 0:
+        posEye = "Right"
+    elif maxIndex == 1:
+        posEye = "Center"
+    elif maxIndex == 2:
+        posEye = "Left"
+    else:
+        posEye = "Eye Closed"
+    return posEye
+
+    
+camera = cv.VideoCapture(0) 
 counter=0
 last_count=0
 last_ratio =0
@@ -131,7 +156,8 @@ with mp_face_mesh.FaceMesh(
             # Eyes Tracking 
             right_cropped, left_cropped =extracting_eyes(frame, points, LEFT_EYE, RIGHT_EYE)
             # eye_position_estimator(frame, points, LEFT_EYE)
-            position_estimator(frame, left_cropped)
+            pos_estimation=position_estimator(frame, left_cropped)
+            print(pos_estimation)
             # position_estimator(left_cropped)
 
 
