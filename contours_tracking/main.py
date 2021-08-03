@@ -115,11 +115,11 @@ def pixel_counter(first_part, second_part, third_part):
     posEye = ''
 
     if maxIndex == 0:
-        posEye = "Right"
+        posEye = "RIGHT"
     elif maxIndex == 1:
-        posEye = "Center"
+        posEye = "CENTER"
     elif maxIndex == 2:
-        posEye = "Left"
+        posEye = "LEFT"
     else:
         posEye = "Eye Closed"
     return posEye
@@ -137,7 +137,7 @@ with mp_face_mesh.FaceMesh(
         
         if ret is False:
             break
-        frame = cv.resize(frame, None, fx=2.5, fy=2.5, interpolation=cv.INTER_CUBIC)
+        frame = cv.resize(frame, None, fx=1.5, fy=1.5, interpolation=cv.INTER_CUBIC)
         # converting color space from BGR to RGB 
         rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
         # getting the frame width 
@@ -158,6 +158,7 @@ with mp_face_mesh.FaceMesh(
             # eye_position_estimator(frame, points, LEFT_EYE)
             pos_estimation=position_estimator(frame, left_cropped)
             print(pos_estimation)
+            cv.putText(frame, f"Pos: {pos_estimation} ", (100, 100),font, 0.7, (0,0,0),2 )
             # position_estimator(left_cropped)
 
 
@@ -176,7 +177,7 @@ with mp_face_mesh.FaceMesh(
             else: 
                 counter =0
         cv.imshow('camera', frame)
-        key = cv.waitKey(10)
+        key = cv.waitKey(1)
         if key ==ord('q'):
             break
     cv.destroyAllWindows()
