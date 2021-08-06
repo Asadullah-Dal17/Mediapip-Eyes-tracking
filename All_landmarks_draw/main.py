@@ -1,40 +1,15 @@
 import cv2 as cv 
 import mediapipe as mp
 import csv 
-file_path = 'face_mesh.csv'
-with open(file_path, 'r') as csv_file:
-    data_list= list(csv.reader(csv_file))
-    silhouette =[int(i) for i in data_list[0][1:]]
-    lipsUpperOuter = [int(i) for i in data_list[1][1:]]
+import utils
 
-lipsLowerOuter = [int(i) for i in data_list[2][1:]]
-lipsUpperInner = [int(i) for i in data_list[3][1:]]
-lipsLowerInner = [int(i) for i in data_list[4][1:]]
-rightEyeUpper0 = [int(i) for i in data_list[5][1:]]
-rightEyeLower0 = [int(i) for i in data_list[6][1:]]
-rightEyeUpper1 = [int(i) for i in data_list[7][1:]]
-rightEyeLower1 = [int(i) for i in data_list[8][1:]]
-rightEyeUpper2 = [int(i) for i in data_list[9][1:]]
-rightEyeLower2 = [int(i) for i in data_list[10][1:]]
-rightEyeLower3 = [int(i) for i in data_list[11][1:]]
-rightEyebrowUpper = [int(i) for i in data_list[12][1:]]
-rightEyebrowLower = [int(i) for i in data_list[13][1:]]
-leftEyeUpper0 = [int(i) for i in data_list[14][1:]]
-leftEyeLower0 = [int(i) for i in data_list[15][1:]]
-leftEyeUpper1 = [int(i) for i in data_list[16][1:]]
-leftEyeLower1 = [int(i) for i in data_list[17][1:]]
-leftEyeUpper2 = [int(i) for i in data_list[18][1:]]
-leftEyeLower2 = [int(i) for i in data_list[19][1:]]
-leftEyeLower3 = [int(i) for i in data_list[20][1:]]
-leftEyebrowUpper = [int(i) for i in data_list[21][1:]]
-leftEyebrowLower = [int(i) for i in data_list[22][1:]]
-midwayBetweenEyes = [int(i) for i in data_list[23][1:]]
-'''noseTip = [int(i) for i in data_list[1][1:]]
-noseBottom = [int(i) for i in data_list[1][1:]]
-noseRightCorner = [int(i) for i in data_list[1][1:]]
-noseLeftCorner = [int(i) for i in data_list[1][1:]]
-rightCheek = [int(i) for i in data_list[1][1:]]
-leftCheek = [int(i) for i in data_list[1][1:]]'''
+
+LIPS=[61,146, 91, 181,181,84,17, 314, 405, 321, 375, 61, 185,40,39,37,0,267,269,270,409,78,95,88,178,87,14,317,402,318,324,78,191,80,81,82,13,312,311,310,415]
+LEFT_EYE =[263,249,390,373,374,380,381,382,263,466,388,387,386,385,384,398]
+LEFT_EYEBROW =[276,283,282,295,300,293,334,296]
+RIGHT_EYE=[33,7, 163,144,145,153,154,155,33,246,161,160159, 158, 157, 173]
+RIGHT_EYEBROW=[46,53,52,65,70,63,105,66]
+FACE_OVAL=[10,338,297,332,284,251,389,356,454,323,361,288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172,58, 132,93, 234, 127, 162,21,54, 103,67, 109]
 mp_face_mesh = mp.solutions.face_mesh
 
 camera = cv.VideoCapture(0)
@@ -51,7 +26,7 @@ def landmarks_detector(image, results, draw=False):
     height, width = image.shape[:2]
     for Ids ,marks in enumerate(results.multi_face_landmarks[0].landmark):
         # adding land mark to list with its id or indes number
-        mesh_points_list.append([Ids, (int(marks.x*width), int(marks.y*height))])
+        mesh_points_list.append([(int(marks.x*width), int(marks.y*height))])
         if draw==True:
             cv.circle(image,(int(marks.x*width), int(marks.y*height)), 2, (0,0,255),-1)
     # return the image and point of landmarks all 
@@ -73,8 +48,25 @@ with mp_face_mesh.FaceMesh(
         results = face_mesh.process(rgb_frame)
         if results.multi_face_landmarks:
             image, points = landmarks_detector(rgb_frame, results)
-            [cv.circle(frame, (points[pos][1]), 2,(0,0,255), -1) for pos in rightEyebrowLower]
-            [cv.circle(frame, (points[pos][1]), 2,(255,0,255), -1) for pos in rightEyebrowLower]
+            face = [points[pos] for pos in silhouette]
+            merge= leftEyeUpper0+leftEyeLower0
+            print(merge)
+            rightEyebrowL = [points[pos] for pos in [263,249,390,373,374,380,381,382,263,466,388, 387, 386, 385, 384, 398, 362]]
+            
+            
+
+
+            
+            # print(right)
+            # print(silhouette)
+            # [cv.circle(frame, (points[pos][1]), 2,(255,0,255), -1) for pos in rightEyebrowLower]
+            # for point in points:
+            #     cv.circle(frame, point, 2, (0, 255,0), -1)
+            frame = utils.fillPolyTrans(frame, rightEyebrowL, utils.YELLOW, 0.5)
+            # frame = utils.fillPolyTrans(frame, face, utils.GREEN, 0.3)
+
+
+            # frame = utils.fillPolyTrans(frame, right, utils.MAGENTA, 0.5)
         cv.imshow('camera', frame)
         key = cv.waitKey(1)
         if key ==ord('q'):
