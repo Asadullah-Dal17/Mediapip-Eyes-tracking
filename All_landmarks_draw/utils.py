@@ -108,6 +108,7 @@ def fillPolyTrans(img, points, color, opacity):
     img = new_img
 
     return img
+
 def rectTrans(img, pt1, pt2, color, thickness, opacity):
     """
 
@@ -127,18 +128,21 @@ def rectTrans(img, pt1, pt2, color, thickness, opacity):
     return img
 
 def main():
-    cap = cv.VideoCapture(0)
+    cap = cv.VideoCapture('Girl.mp4')
+    counter =0
     while True:
         success, img = cap.read()
         # img = np.zeros((1000,1000, 3), dtype=np.uint8)
         img=rectTrans(img, pt1=(30, 320), pt2=(160, 260), color=(0,255,255),thickness=-1, opacity=0.6)
         img =fillPolyTrans(img=img, points=points_list, color=(0,255,0), opacity=.5)
         drawColor(img, [BLACK,WHITE ,BLUE,RED,CYAN,YELLOW,MAGENTA,GRAY ,GREEN,PURPLE,ORANGE,PINK])
-        textBlurBackground(img, 'Blured Background Text', cv.FONT_HERSHEY_COMPLEX, 0.8, (60, 140),2, GREEN, (71,71), 13, 13)
+        textBlurBackground(img, 'Blured Background Text', cv.FONT_HERSHEY_COMPLEX, 0.8, (60, 140),2, YELLOW, (71,71), 13, 13)
         img=textWithBackground(img, 'Colored Background Texts', cv.FONT_HERSHEY_SIMPLEX, 0.8, (60,80), textThickness=2, bgColor=GREEN, textColor=BLACK, bgOpacity=0.7, pad_x=6, pad_y=6)
         imgGray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
         # cv.imwrite('color_image.png', img)
+        counter +=1
         cv.imshow('img', img)
+        cv.imwrite(f'image/image_{counter}.png', img)
         if cv.waitKey(1) ==ord('q'):
             break
 

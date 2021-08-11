@@ -2,6 +2,7 @@ import cv2 as cv
 import mediapipe as mp
 import csv 
 import numpy as np 
+
 font = cv.FONT_HERSHEY_COMPLEX
 file_path = 'selected_landmarks.csv'
 with open(file_path, 'r') as csv_file:
@@ -10,7 +11,6 @@ with open(file_path, 'r') as csv_file:
     RIGHT_EYE = [int(i) for i in data_list[0][1:]]
     # print(RIGHT_EYE)
 mp_face_mesh = mp.solutions.face_mesh
-
 
 # land marks extarctor function 
 def landmarks_detector(image, results, draw=False):

@@ -2,6 +2,7 @@ import cv2 as cv
 import mediapipe as mp
 import csv 
 import numpy as np 
+import utils
 # for the sound, to indicate the position of eyes 
 from pygame import mixer
 import pygame
@@ -84,6 +85,7 @@ def extracting_eyes(frame, landmarks, left_eye, right_eye):
     
     left_np = np.array(left_points, dtype=np.int32)
     right_np = np.array(right_points, dtype=np.int32)
+    # print(left_points)
 
     # Fill the Region of Eye on the mask
     cv.fillPoly(mask, [right_np], 255)
@@ -97,6 +99,7 @@ def extracting_eyes(frame, landmarks, left_eye, right_eye):
     cv.imshow('right eye', right_eye_cropped)
     cv.imshow('mask', eye)
     return right_eye_cropped, left_eye_cropped
+    
 def position_estimator(frame,eye_image):
     eye_height, eye_width = eye_image.shape[:2]
     portion = int(eye_width/3)
@@ -111,9 +114,8 @@ def position_estimator(frame,eye_image):
     images = np.hstack((second_part, first_part,third_part))
     cv.imshow('stack', images)
     cv.imshow('threshed', threshed_eye)
-    estimated_pos =pixel_counter(first_part, second_part, third_part)
-    return estimated_pos
-
+    estimated_pos , colors =pixel_counter(first_part, second_part, third_part)
+    return estimated_pos, colors
 # Pixel Counter Functio
 def pixel_counter(first_part, second_part, third_part):
     right_part = np.sum(first_part==0)
@@ -126,13 +128,17 @@ def pixel_counter(first_part, second_part, third_part):
 
     if maxIndex == 0:
         posEye = "RIGHT"
+        colors = [utils.BLACK, utils.GREEN]
     elif maxIndex == 1:
         posEye = "CENTER"
+        colors = [utils.YELLOW, utils.BLACK]
     elif maxIndex == 2:
         posEye = "LEFT"
+        colors = [utils.PINK, utils.BLUE]
     else:
         posEye = "Eye Closed"
-    return posEye
+        colors = [utils.GRAY, utils.PURPLE]
+    return posEye, colors
 
     
 camera = cv.VideoCapture(0) 
@@ -167,9 +173,10 @@ with mp_face_mesh.FaceMesh(
             # Eyes Tracking 
             right_cropped, left_cropped =extracting_eyes(frame, points, LEFT_EYE, RIGHT_EYE)
             # eye_position_estimator(frame, points, LEFT_EYE)
-            pos_estimation=position_estimator(frame, left_cropped)
+            pos_estimation, color = position_estimator(frame, left_cropped)
             # print(pos_estimation)
-            cv.putText(frame, f"Pos: {pos_estimation} ", (100, 100),font, 0.7, (0,0,0),2 )
+            frame =utils.textWithBackground(frame,f'Pos: {pos_estimation}',font, 0.7,(20, 30),2, color[1], color[0],6, 6, 0.7)
+            # cv.putText(frame, f"Pos: {pos_estimation} ", (100, 100),font, 0.7, (0,0,0),2 )
             # position_estimator(left_cropped)
             print(pygame.mixer.get_busy())
             
@@ -183,7 +190,8 @@ with mp_face_mesh.FaceMesh(
             right_ratio=blink_ratio(frame ,points, RIGHT_EYE, right_eye=True)
             left_ratio=blink_ratio(frame ,points, LEFT_EYE)
             ratio = (right_ratio +left_ratio)/2
-            cv.putText(frame, f'Ratio: {round(ratio,3)}', (40,40), font, 0.5, (0,255,0),2 )
+            # cv.putText(frame, f'Ratio: {round(ratio,3)}', (40,40), font, 0.5, (0,255,0),2 )
+            # utils.textBlurBackground(frame, f'Ratio:  {round(ratio,3)}', font, 0.7, (30, 30), 2, (0,255,0), (71,71), 5,5)
             cv.putText(frame, f'Last_ratio: {round(last_ratio,3)} :: last count: {last_count}', (40,55), font, 0.5, (0,255,0),2 )
             if ratio>5:
                 counter +=1
