@@ -20,6 +20,7 @@ RIGHT_EYE=[ 33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 1
 RIGHT_EYEBROW=[ 70, 63, 105, 66, 107, 55, 65, 52, 53, 46 ]
 
 # Variables 
+fonts =cv.FONT_HERSHEY_COMPLEX
 # Frame per seconds
 frame_counter =0
 
@@ -40,16 +41,34 @@ def faceLandmarksDetector(img, result, draw=False):
     # print()
     return mesh_cord_point
 
+def blinkRatio(img, landmark,eye_points):
+    # width of eye,in pixels or horizontal line. 
+    hx, hy = landmark[eye_points[0]]
+    # cv.circle(img, (hx, hy), 2, utils.GREEN, -1)
+    hx1, hy1 = landmark[eye_points[8]]
+    eye_pixel_width = hx1-hx
+
+    # vertical line or height of eye
+    vx, vy = landmark[eye_points[12]]
+    # print(eye_points[12], eye_points[4])
+    cv.circle(img, (vx, vy), 2, utils.BLACK, -1)
+    vx1, vy1 = landmark[eye_points[4]]
+    cv.circle(img, (vx1, vy1), 2, utils.BLUE, -1)
+    eye_pixel_height = vy1 - vy
+    img =utils.textBlurBackground(img, f'w: {eye_pixel_width}  h: {eye_pixel_height}', fonts, 1.2, (50,50), 2,(0,255,255), (99,99))
+    return img    
+
 
 
 # setting up camera 
-cap = cv.VideoCapture(0)
+cap = cv.VideoCapture(3)
 
 # configring mediapipe for face mesh detection
 with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confidence=0.5 ) as face_mesh:
     # string video/webcame feed here     
     while True:
         ret, frame = cap.read()
+        frame = cv.resize(frame, None, fx=1.5, fy=1.5, interpolation=cv.INTER_CUBIC)
         
         # converting color space from BGR to RGB 
         rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
@@ -65,17 +84,20 @@ with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confiden
             # calling faceLandmarksDetector function and getting coordinate of each point in face mesh 
             mesh_cords =faceLandmarksDetector(img=frame, result=results)
 
-            frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in FACE_OVAL],color=utils.BLACK, opacity=0.4)
-            # draw lips landmarks portion 
-            frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in LIPS],color=utils.WHITE, opacity=0.4)
-            frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in LEFT_EYE],color=utils.YELLOW, opacity=0.4)
-            frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in LEFT_EYEBROW],color=utils.GREEN, opacity=0.4)
-            frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in RIGHT_EYE],color=utils.YELLOW, opacity=0.4)
-            frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in RIGHT_EYEBROW],color=utils.GREEN, opacity=0.4)
+            # frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in FACE_OVAL],color=utils.BLACK, opacity=0.4)
+            # # draw lips landmarks portion 
+            # frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in LIPS],color=utils.WHITE, opacity=0.4)
+            # frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in LEFT_EYE],color=utils.YELLOW, opacity=0.4)
+            # frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in LEFT_EYEBROW],color=utils.GREEN, opacity=0.4)
+            # frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in RIGHT_EYE],color=utils.YELLOW, opacity=0.4)
+            # frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in RIGHT_EYEBROW],color=utils.GREEN, opacity=0.4)
+            blinkRatio(frame,mesh_cords, LEFT_EYE)
+            # blinkRatio(frame,mesh_cords, RIGHT_EYE)
+            
 
         cv.imshow('frame',frame)
         
-        key = cv.waitKey(1)
+        key = cv.waitKey(10)
         if key==ord('q'):
             break
 cv.destroyAllWindows()
