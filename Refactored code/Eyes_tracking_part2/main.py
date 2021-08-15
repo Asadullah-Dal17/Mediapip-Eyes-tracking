@@ -41,24 +41,91 @@ def faceLandmarksDetector(img, result, draw=False):
     # print()
     return mesh_cord_point
 
-def blinkRatio(img, landmark,eye_points):
-    # width of eye,in pixels or horizontal line. 
-    hx, hy = landmark[eye_points[0]]
-    # cv.circle(img, (hx, hy), 2, utils.GREEN, -1)
-    hx1, hy1 = landmark[eye_points[8]]
-    eye_pixel_width = hx1-hx
+def blinkRatio(img, landmark,right_eye, left_eye):
+    
+    # width of eye,in pixels or horizontal line.
+    
+    # Right Eye 
+    right_hx, right_hy = landmark[right_eye[0]]
+    right_hx1, right_hy1 = landmark[right_eye[8]]
+    right_eye_pixel_width = right_hx1-right_hx
+    
+    # Left Eyes
+    left_hx, left_hy = landmark[left_eye[0]]
+    left_hx1, left_hy1 = landmark[left_eye[8]]
+    left_eye_pixel_width = left_hx1-left_hx
 
-    # vertical line or height of eye
-    vx, vy = landmark[eye_points[12]]
-    # print(eye_points[12], eye_points[4])
-    cv.circle(img, (vx, vy), 2, utils.BLACK, -1)
-    vx1, vy1 = landmark[eye_points[4]]
-    cv.circle(img, (vx1, vy1), 2, utils.BLUE, -1)
-    eye_pixel_height = vy1 - vy
-    img =utils.textBlurBackground(img, f'w: {eye_pixel_width}  h: {eye_pixel_height}', fonts, 1.2, (50,50), 2,(0,255,255), (99,99))
-    return img    
+    # ---------------------------------------
+    # vertical line or height of eyes
+    
+    # Right Eyes 
+    right_vx, right_vy = landmark[right_eye[12]]
+    right_vx1, right_vy1 = landmark[right_eye[4]]
+    right_eye_pixel_height = right_vy1 - right_vy
+    
+    # Left Eye
+    left_vx, left_vy = landmark[left_eye[12]]
+    left_vx1, left_vy1 = landmark[left_eye[4]]
+    left_eye_pixel_height = left_vy1 - left_vy
+    # ---------------------------------------
 
 
+    img =utils.textBlurBackground(img, f'w: {left_eye_pixel_width}  h: {left_eye_pixel_height}', fonts, 1.2, (50,50), 2,(0,255,255), (99,99))
+    
+    right_ratio = right_eye_pixel_width/right_eye_pixel_height
+    
+    left_ratio = left_eye_pixel_width/left_eye_pixel_height
+    eyes_ratio = (left_ratio + right_ratio) / 2
+    return eyes_ratio
+
+#extract eyes from frame
+def eyes_extractor(frame,right_eye_cords, left_eye_cords):
+    
+    # converting color image to Gray Scale image.
+    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    # getting the dimension of image
+    dim = gray.shape 
+    
+    # creating empty mask
+    mask = np.zeros(dim, dtype=np.uint8)
+
+    left_np = np.array(left_eye_cord, dtype=np.int32)
+    right_np = np.array(right_eye_cord, dtype=np.int32)
+    # draw eyes portion on mask 
+    cv.fillPoly(mask, [right_np], 255)
+
+    cv.fillPoly(mask, [left_np], 255)
+    cv.imshow('mask', mask)
+
+    # spearting Eyes from frame 
+    eyes = cv.bitwise_and(gray, gray, mask=mask)
+
+    # getting the min x,y and max x,y  of eyes 
+    # Right Eye
+    r_maxX = (max(right_eye_cord, key=lambda item: item[0]))[0]
+    r_minX = (min(right_eye_cord, key=lambda item: item[0]))[0]
+    r_maxY = (max(right_eye_cord, key=lambda item: item[1]))[1]
+    r_minY = (min(right_eye_cord, key=lambda item: item[1]))[1]
+    # Left Eye
+    l_maxX = (max(left_eye_cord, key=lambda item: item[0]))[0]
+    l_minX = (min(left_eye_cord, key=lambda item: item[0]))[0]
+    l_maxY = (max(left_eye_cord, key=lambda item: item[1]))[1]
+    l_minY = (min(left_eye_cord, key=lambda item: item[1]))[1]
+
+    # cropping eyes from mask 
+    # cropping right eye 
+    cropped_right = eyes[r_minY:r_maxY, r_minX:r_maxX]
+    # croping left eye 
+    cropped_left = eyes[l_minY:l_maxY, l_minX:l_maxX]
+
+    # cv.imshow("left", cropped_left)
+    # cv.imshow('right', cropped_right)
+    return cropped_right, cropped_left
+def positionEstimator(frame, eye_image):
+    eye_height, eye_width = eye_image.shape[:2]
+    portion = int(eye_width/3)
+    ret, threshold_eye =cv.threshold(eye_image, 130,255, cv.THRESH_BINARY)
+    cv.imshow('threshold', threshold_eye)
 
 # setting up camera 
 cap = cv.VideoCapture(3)
@@ -68,7 +135,7 @@ with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confiden
     # string video/webcame feed here     
     while True:
         ret, frame = cap.read()
-        frame = cv.resize(frame, None, fx=1.5, fy=1.5, interpolation=cv.INTER_CUBIC)
+        frame = cv.resize(frame, None, fx=3.5, fy=3.5, interpolation=cv.INTER_AREA)
         
         # converting color space from BGR to RGB 
         rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
@@ -83,18 +150,19 @@ with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confiden
         if results.multi_face_landmarks:
             # calling faceLandmarksDetector function and getting coordinate of each point in face mesh 
             mesh_cords =faceLandmarksDetector(img=frame, result=results)
-
-            # frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in FACE_OVAL],color=utils.BLACK, opacity=0.4)
-            # # draw lips landmarks portion 
-            # frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in LIPS],color=utils.WHITE, opacity=0.4)
-            # frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in LEFT_EYE],color=utils.YELLOW, opacity=0.4)
-            # frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in LEFT_EYEBROW],color=utils.GREEN, opacity=0.4)
-            # frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in RIGHT_EYE],color=utils.YELLOW, opacity=0.4)
-            # frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in RIGHT_EYEBROW],color=utils.GREEN, opacity=0.4)
-            blinkRatio(frame,mesh_cords, LEFT_EYE)
-            # blinkRatio(frame,mesh_cords, RIGHT_EYE)
+            right_eye_cord = [mesh_cords[point] for point in RIGHT_EYE]
+            left_eye_cord = [mesh_cords[point] for point in LEFT_EYE]
             
+            # drawing the eyes 
+            # frame =utils.fillPolyTrans(frame, left_eye_cord, utils.PINK, 0.6)
+            # frame =utils.fillPolyTrans(frame, right_eye_cord, utils.PINK, 0.6)
+            eyes_extractor(frame, right_eye_cord, left_eye_cord)
 
+
+            eyes_ratio =blinkRatio(frame,mesh_cords, RIGHT_EYE, LEFT_EYE)
+
+            if eyes_ratio>5:
+                frame = utils.textWithBackground(frame, "Blink", fonts, 1.7, (100,100), 2, utils.YELLOW, pad_x=9, pad_y=9, bgOpacity=0.8)
         cv.imshow('frame',frame)
         
         key = cv.waitKey(10)
