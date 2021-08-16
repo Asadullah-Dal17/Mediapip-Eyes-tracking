@@ -118,17 +118,55 @@ def eyes_extractor(frame,right_eye_cords, left_eye_cords):
     # croping left eye 
     cropped_left = eyes[l_minY:l_maxY, l_minX:l_maxX]
 
-    # cv.imshow("left", cropped_left)
-    # cv.imshow('right', cropped_right)
+    cv.imshow("left", cropped_left)
+    cv.imshow('right', cropped_right)
     return cropped_right, cropped_left
+
 def positionEstimator(frame, eye_image):
-    eye_height, eye_width = eye_image.shape[:2]
-    portion = int(eye_width/3)
-    ret, threshold_eye =cv.threshold(eye_image, 130,255, cv.THRESH_BINARY)
-    cv.imshow('threshold', threshold_eye)
+    # getting the width and height of eye image
+    height, width = eye_image.shape[:2]
+    
+    # calculating the width of each piece 
+    piece = int(width/3)
+ 
+    # applying blur to remove some noise 
+    gaussain_blur=cv.GaussianBlur(eye_image,(5,5), 100)
+
+    # applying thresholding to binarizing_image(black and white pixels only)
+    ret, threshold_eye =cv.threshold(gaussain_blur, 120,255, cv.THRESH_BINARY)
+    
+    # sliceing eye width into three pieces
+    right_piece =threshold_eye[0:height, 0:piece]
+    center_piece =threshold_eye[0:height, piece:piece+piece]
+    left_piece =threshold_eye[0:height, piece+piece:width]
+    
+    cv.imshow('gussain', threshold_eye)
+
+def pixel_counter(first_part, second_part, third_part):
+    right_part = np.sum(first_part==0)
+    center_part = np.sum(second_part==0)
+    left_part = np.sum(third_part==0)
+    eye_parts = [right_part, center_part, left_part]
+    
+    maxIndex =eye_parts.index(max(eye_parts))
+    posEye = ''
+
+    if maxIndex == 0:
+        posEye = "RIGHT"
+        colors = [utils.BLACK, utils.GREEN]
+    elif maxIndex == 1:
+        posEye = "CENTER"
+        colors = [utils.YELLOW, utils.BLACK]
+    elif maxIndex == 2:
+        posEye = "LEFT"
+        colors = [utils.PINK, utils.BLUE]
+    else:
+        posEye = "Eye Closed"
+        colors = [utils.GRAY, utils.PURPLE]
+    return posEye, colors
 
 # setting up camera 
-cap = cv.VideoCapture(3)
+cap = cv.VideoCapture(0)
 
 # configring mediapipe for face mesh detection
 with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confidence=0.5 ) as face_mesh:
@@ -156,7 +194,8 @@ with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confiden
             # drawing the eyes 
             # frame =utils.fillPolyTrans(frame, left_eye_cord, utils.PINK, 0.6)
             # frame =utils.fillPolyTrans(frame, right_eye_cord, utils.PINK, 0.6)
-            eyes_extractor(frame, right_eye_cord, left_eye_cord)
+            right_eye, left_eye=eyes_extractor(frame, right_eye_cord, left_eye_cord)
+            positionEstimator(frame,right_eye)
 
 
             eyes_ratio =blinkRatio(frame,mesh_cords, RIGHT_EYE, LEFT_EYE)
@@ -165,7 +204,7 @@ with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confiden
                 frame = utils.textWithBackground(frame, "Blink", fonts, 1.7, (100,100), 2, utils.YELLOW, pad_x=9, pad_y=9, bgOpacity=0.8)
         cv.imshow('frame',frame)
         
-        key = cv.waitKey(10)
+        key = cv.waitKey(1)
         if key==ord('q'):
             break
 cv.destroyAllWindows()
