@@ -140,7 +140,14 @@ def positionEstimator(frame, eye_image):
     center_piece =threshold_eye[0:height, piece:piece+piece]
     left_piece =threshold_eye[0:height, piece+piece:width]
     
-    cv.imshow('gussain', threshold_eye)
+    eye_position, color =pixel_counter(right_piece, center_piece, left_piece)
+    
+    # cv.imshow('right', right_piece)
+    # cv.imshow('center', center_piece)
+    # cv.imshow('left', left_piece)
+    # cv.imshow('gussain', threshold_eye)
+    return eye_position, color
+
 
 def pixel_counter(first_part, second_part, third_part):
     right_part = np.sum(first_part==0)
@@ -166,14 +173,14 @@ def pixel_counter(first_part, second_part, third_part):
     return posEye, colors
 
 # setting up camera 
-cap = cv.VideoCapture(0)
+cap = cv.VideoCapture(3)
 
 # configring mediapipe for face mesh detection
 with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confidence=0.5 ) as face_mesh:
     # string video/webcame feed here     
     while True:
         ret, frame = cap.read()
-        frame = cv.resize(frame, None, fx=3.5, fy=3.5, interpolation=cv.INTER_AREA)
+        frame = cv.resize(frame, None, fx=2.5, fy=2.5, interpolation=cv.INTER_AREA)
         
         # converting color space from BGR to RGB 
         rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
@@ -195,7 +202,12 @@ with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confiden
             # frame =utils.fillPolyTrans(frame, left_eye_cord, utils.PINK, 0.6)
             # frame =utils.fillPolyTrans(frame, right_eye_cord, utils.PINK, 0.6)
             right_eye, left_eye=eyes_extractor(frame, right_eye_cord, left_eye_cord)
-            positionEstimator(frame,right_eye)
+            right_position, right_color =positionEstimator(frame,right_eye)
+            frame = utils.textWithBackground(frame, f"{right_position}", fonts, 1.2, (70,200), 2,textColor=right_color[0], bgColor=right_color[1], pad_x=9, pad_y=9, bgOpacity=0.7)
+            left_position, left_color =positionEstimator(frame,left_eye)
+            frame = utils.textWithBackground(frame, f"{left_position}", fonts, 1.2, (70,300), 2,textColor=left_color[0], bgColor=left_color[1], pad_x=9, pad_y=9, bgOpacity=0.7)
+
+            
 
 
             eyes_ratio =blinkRatio(frame,mesh_cords, RIGHT_EYE, LEFT_EYE)
