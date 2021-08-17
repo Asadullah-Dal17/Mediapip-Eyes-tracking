@@ -116,7 +116,7 @@ def position_estimator(frame,eye_image):
     cv.imshow('threshed', threshed_eye)
     estimated_pos , colors =pixel_counter(first_part, second_part, third_part)
     return estimated_pos, colors
-# Pixel Counter Functio
+# Pixel Counter Function
 def pixel_counter(first_part, second_part, third_part):
     right_part = np.sum(first_part==0)
     center_part = np.sum(second_part==0)
