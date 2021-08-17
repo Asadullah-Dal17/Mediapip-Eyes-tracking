@@ -99,6 +99,7 @@ def eyes_extractor(frame,right_eye_cords, left_eye_cords):
 
     # spearting Eyes from frame 
     eyes = cv.bitwise_and(gray, gray, mask=mask)
+    eyes[ mask==0 ] = 155
 
     # getting the min x,y and max x,y  of eyes 
     # Right Eye
@@ -130,10 +131,12 @@ def positionEstimator(frame, eye_image):
     piece = int(width/3)
  
     # applying blur to remove some noise 
-    gaussain_blur=cv.GaussianBlur(eye_image,(5,5), 100)
+    gaussain_blur=cv.GaussianBlur(eye_image,(9,9), 0)
+    blur = cv.medianBlur(gaussain_blur, 3)
+
 
     # applying thresholding to binarizing_image(black and white pixels only)
-    ret, threshold_eye =cv.threshold(gaussain_blur, 120,255, cv.THRESH_BINARY)
+    ret, threshold_eye =cv.threshold(blur, 130,255, cv.THRESH_BINARY)
     
     # sliceing eye width into three pieces
     right_piece =threshold_eye[0:height, 0:piece]
@@ -173,14 +176,14 @@ def pixel_counter(first_part, second_part, third_part):
     return posEye, colors
 
 # setting up camera 
-cap = cv.VideoCapture(3)
+cap = cv.VideoCapture(0)
 
 # configring mediapipe for face mesh detection
 with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confidence=0.5 ) as face_mesh:
     # string video/webcame feed here     
     while True:
         ret, frame = cap.read()
-        frame = cv.resize(frame, None, fx=2.5, fy=2.5, interpolation=cv.INTER_AREA)
+        frame = cv.resize(frame, None, fx=1.5, fy=1.5, interpolation=cv.INTER_AREA)
         
         # converting color space from BGR to RGB 
         rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
@@ -206,9 +209,6 @@ with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confiden
             frame = utils.textWithBackground(frame, f"{right_position}", fonts, 1.2, (70,200), 2,textColor=right_color[0], bgColor=right_color[1], pad_x=9, pad_y=9, bgOpacity=0.7)
             left_position, left_color =positionEstimator(frame,left_eye)
             frame = utils.textWithBackground(frame, f"{left_position}", fonts, 1.2, (70,300), 2,textColor=left_color[0], bgColor=left_color[1], pad_x=9, pad_y=9, bgOpacity=0.7)
-
-            
-
 
             eyes_ratio =blinkRatio(frame,mesh_cords, RIGHT_EYE, LEFT_EYE)
 
