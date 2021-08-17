@@ -2,6 +2,14 @@ import cv2 as cv
 import numpy as np 
 import mediapipe as mp
 import utils
+from pygame import mixer
+import pygame
+
+# loading in the sound clips 
+mixer.init()
+sound_left =mixer.Sound('left.wav')
+sound_right = mixer.Sound('Right.wav')
+sound_center =mixer.Sound ('center.wav')
 
 # Landmarks indices for different parts of face, mediapipe.
 
@@ -179,7 +187,7 @@ def pixel_counter(first_part, second_part, third_part):
     return posEye, colors
 
 # setting up camera 
-cap = cv.VideoCapture(3)
+cap = cv.VideoCapture(0)
 
 # configring mediapipe for face mesh detection
 with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confidence=0.5 ) as face_mesh:
@@ -214,6 +222,10 @@ with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confiden
             frame = utils.textWithBackground(frame, f"{left_position}", fonts, 1.2, (70,300), 2,textColor=left_color[0], bgColor=left_color[1], pad_x=9, pad_y=9, bgOpacity=0.7)
 
             eyes_ratio =blinkRatio(frame,mesh_cords, RIGHT_EYE, LEFT_EYE)
+            
+            if left_position=="RIGHT" and pygame.mixer.get_busy()==0: sound_right.play()
+            if left_position=="CENTER" and pygame.mixer.get_busy()==0: sound_center.play()
+            if left_position=="LEFT" and pygame.mixer.get_busy()==0: sound_left.play()
 
             if eyes_ratio>5:
                 CLOSED_EYES_FRAMAE_COUNTER +=1
