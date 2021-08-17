@@ -23,6 +23,9 @@ RIGHT_EYEBROW=[ 70, 63, 105, 66, 107, 55, 65, 52, 53, 46 ]
 fonts =cv.FONT_HERSHEY_COMPLEX
 # Frame per seconds
 frame_counter =0
+CLOSED_EYE_FRAME =3
+TOTAL_BLINKS =0
+COUNTER_WHILE_CLOSED =0
 
 # Setting up mediapipe 
 map_face_mesh= mp.solutions.face_mesh
@@ -78,105 +81,8 @@ def blinkRatio(img, landmark,right_eye, left_eye):
     eyes_ratio = (left_ratio + right_ratio) / 2
     return eyes_ratio
 
-#extract eyes from frame
-def eyes_extractor(frame,right_eye_cords, left_eye_cords):
-    
-    # converting color image to Gray Scale image.
-    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-    # getting the dimension of image
-    dim = gray.shape 
-    
-    # creating empty mask
-    mask = np.zeros(dim, dtype=np.uint8)
-
-    left_np = np.array(left_eye_cord, dtype=np.int32)
-    right_np = np.array(right_eye_cord, dtype=np.int32)
-    # draw eyes portion on mask 
-    cv.fillPoly(mask, [right_np], 255)
-
-    cv.fillPoly(mask, [left_np], 255)
-    cv.imshow('mask', mask)
-
-    # spearting Eyes from frame 
-    eyes = cv.bitwise_and(gray, gray, mask=mask)
-    eyes[ mask==0 ] = 155
-
-    # getting the min x,y and max x,y  of eyes 
-    # Right Eye
-    r_maxX = (max(right_eye_cord, key=lambda item: item[0]))[0]
-    r_minX = (min(right_eye_cord, key=lambda item: item[0]))[0]
-    r_maxY = (max(right_eye_cord, key=lambda item: item[1]))[1]
-    r_minY = (min(right_eye_cord, key=lambda item: item[1]))[1]
-    # Left Eye
-    l_maxX = (max(left_eye_cord, key=lambda item: item[0]))[0]
-    l_minX = (min(left_eye_cord, key=lambda item: item[0]))[0]
-    l_maxY = (max(left_eye_cord, key=lambda item: item[1]))[1]
-    l_minY = (min(left_eye_cord, key=lambda item: item[1]))[1]
-
-    # cropping eyes from mask 
-    # cropping right eye 
-    cropped_right = eyes[r_minY:r_maxY, r_minX:r_maxX]
-    # croping left eye 
-    cropped_left = eyes[l_minY:l_maxY, l_minX:l_maxX]
-
-    cv.imshow("left", cropped_left)
-    cv.imshow('right', cropped_right)
-    return cropped_right, cropped_left
-
-def positionEstimator(frame, eye_image):
-    # getting the width and height of eye image
-    height, width = eye_image.shape[:2]
-    
-    # calculating the width of each piece 
-    piece = int(width/3)
- 
-    # applying blur to remove some noise 
-    gaussain_blur=cv.GaussianBlur(eye_image,(9,9), 0)
-    blur = cv.medianBlur(gaussain_blur, 3)
-
-
-    # applying thresholding to binarizing_image(black and white pixels only)
-    ret, threshold_eye =cv.threshold(blur, 130,255, cv.THRESH_BINARY)
-    
-    # sliceing eye width into three pieces
-    right_piece =threshold_eye[0:height, 0:piece]
-    center_piece =threshold_eye[0:height, piece:piece+piece]
-    left_piece =threshold_eye[0:height, piece+piece:width]
-    
-    eye_position, color =pixel_counter(right_piece, center_piece, left_piece)
-    
-    # cv.imshow('right', right_piece)
-    # cv.imshow('center', center_piece)
-    # cv.imshow('left', left_piece)
-    # cv.imshow('gussain', threshold_eye)
-    return eye_position, color
-
-
-def pixel_counter(first_part, second_part, third_part):
-    right_part = np.sum(first_part==0)
-    center_part = np.sum(second_part==0)
-    left_part = np.sum(third_part==0)
-    eye_parts = [right_part, center_part, left_part]
-    
-    maxIndex =eye_parts.index(max(eye_parts))
-    posEye = ''
-
-    if maxIndex == 0:
-        posEye = "RIGHT"
-        colors = [utils.BLACK, utils.GREEN]
-    elif maxIndex == 1:
-        posEye = "CENTER"
-        colors = [utils.YELLOW, utils.BLACK]
-    elif maxIndex == 2:
-        posEye = "LEFT"
-        colors = [utils.PINK, utils.BLUE]
-    else:
-        posEye = "Eye Closed"
-        colors = [utils.GRAY, utils.PURPLE]
-    return posEye, colors
-
 # setting up camera 
-cap = cv.VideoCapture(0)
+cap = cv.VideoCapture(3)
 
 # configring mediapipe for face mesh detection
 with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confidence=0.5 ) as face_mesh:
@@ -204,16 +110,19 @@ with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confiden
             # drawing the eyes 
             # frame =utils.fillPolyTrans(frame, left_eye_cord, utils.PINK, 0.6)
             # frame =utils.fillPolyTrans(frame, right_eye_cord, utils.PINK, 0.6)
-            right_eye, left_eye=eyes_extractor(frame, right_eye_cord, left_eye_cord)
-            right_position, right_color =positionEstimator(frame,right_eye)
-            frame = utils.textWithBackground(frame, f"{right_position}", fonts, 1.2, (70,200), 2,textColor=right_color[0], bgColor=right_color[1], pad_x=9, pad_y=9, bgOpacity=0.7)
-            left_position, left_color =positionEstimator(frame,left_eye)
-            frame = utils.textWithBackground(frame, f"{left_position}", fonts, 1.2, (70,300), 2,textColor=left_color[0], bgColor=left_color[1], pad_x=9, pad_y=9, bgOpacity=0.7)
 
             eyes_ratio =blinkRatio(frame,mesh_cords, RIGHT_EYE, LEFT_EYE)
 
             if eyes_ratio>5:
+                COUNTER_WHILE_CLOSED +=1
                 frame = utils.textWithBackground(frame, "Blink", fonts, 1.7, (100,100), 2, utils.YELLOW, pad_x=9, pad_y=9, bgOpacity=0.8)
+                
+                print('BLINK')
+            else:
+                if COUNTER_WHILE_CLOSED >CLOSED_EYE_FRAME:
+                    COUNTER_WHILE_CLOSED =0
+                    TOTAL_BLINKS +=1
+            print(TOTAL_BLINKS)
         cv.imshow('frame',frame)
         
         key = cv.waitKey(1)
