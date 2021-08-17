@@ -22,10 +22,10 @@ RIGHT_EYEBROW=[ 70, 63, 105, 66, 107, 55, 65, 52, 53, 46 ]
 # Variables 
 fonts =cv.FONT_HERSHEY_COMPLEX
 # Frame per seconds
-frame_counter =0
-CLOSED_EYE_FRAME =3
-TOTAL_BLINKS =0
-COUNTER_WHILE_CLOSED =0
+frame_counter = 0 # for fps
+CET_FRAMES = 3 # closed eyes threshold frames
+TOTAL_BLINKS = 0 # total blinks counter 
+CLOSED_EYES_FRAMAE_COUNTER = 0 # count frames while the eyes are closed.
 
 # Setting up mediapipe 
 map_face_mesh= mp.solutions.face_mesh
@@ -114,15 +114,15 @@ with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confiden
             eyes_ratio =blinkRatio(frame,mesh_cords, RIGHT_EYE, LEFT_EYE)
 
             if eyes_ratio>5:
-                COUNTER_WHILE_CLOSED +=1
+                CLOSED_EYES_FRAMAE_COUNTER +=1
                 frame = utils.textWithBackground(frame, "Blink", fonts, 1.7, (100,100), 2, utils.YELLOW, pad_x=9, pad_y=9, bgOpacity=0.8)
-                
-                print('BLINK')
             else:
-                if COUNTER_WHILE_CLOSED >CLOSED_EYE_FRAME:
-                    COUNTER_WHILE_CLOSED =0
+                if CLOSED_EYES_FRAMAE_COUNTER >CET_FRAMES:
+                    CLOSED_EYES_FRAMAE_COUNTER =0
                     TOTAL_BLINKS +=1
-            print(TOTAL_BLINKS)
+            # print(TOTAL_BLINKS)
+            frame = utils.textWithBackground(frame, f"Total Blinks: {TOTAL_BLINKS}", fonts, 0.7, (20,150), 2, utils.GREEN, pad_x=4, pad_y=4, bgOpacity=0.8)
+
         cv.imshow('frame',frame)
         
         key = cv.waitKey(1)
