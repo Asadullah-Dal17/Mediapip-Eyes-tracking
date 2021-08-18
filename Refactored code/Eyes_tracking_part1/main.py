@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np 
 import mediapipe as mp
 import utils
-
+import time
 # Landmarks indices for different parts of face, mediapipe.
 
 # face bounder indices 
@@ -40,16 +40,17 @@ def faceLandmarksDetector(img, result, draw=False):
     # print()
     return mesh_cord_point
 
-
-
 # setting up camera 
 cap = cv.VideoCapture(0)
 
 # configring mediapipe for face mesh detection
 with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confidence=0.5 ) as face_mesh:
-    # string video/webcame feed here     
+    # string video/webcame feed here
+    # initial time set here 
+    starting_time =time.time()
     while True:
         ret, frame = cap.read()
+        frame_counter +=1
         
         # converting color space from BGR to RGB 
         rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
@@ -73,6 +74,13 @@ with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confiden
             frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in RIGHT_EYE],color=utils.YELLOW, opacity=0.4)
             frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in RIGHT_EYEBROW],color=utils.GREEN, opacity=0.4)
 
+        # calculating the end time of total frames 
+        end_time = time.time()- starting_time
+
+        # calculating the frames per seconds 
+        fps = frame_counter/end_time
+        
+        
         cv.imshow('frame',frame)
         
         key = cv.waitKey(1)
