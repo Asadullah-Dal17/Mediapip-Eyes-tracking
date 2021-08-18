@@ -72,14 +72,24 @@ with map_face_mesh.FaceMesh( min_detection_confidence=0.5, min_tracking_confiden
             # calling faceLandmarksDetector function and getting coordinate of each point in face mesh 
             mesh_cords =faceLandmarksDetector(img=frame, result=results)
 
-            frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in FACE_OVAL],color=utils.BLACK, opacity=0.4)
+            
+            frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in FACE_OVAL],color=utils.ORANGE, opacity=0.4)
             # draw lips landmarks portion 
-            frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in LIPS],color=utils.WHITE, opacity=0.4)
+            frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in LIPS],color=utils.WHITE, opacity=0.6)
             frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in LEFT_EYE],color=utils.YELLOW, opacity=0.4)
             frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in LEFT_EYEBROW],color=utils.GREEN, opacity=0.4)
             frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in RIGHT_EYE],color=utils.YELLOW, opacity=0.4)
             frame = utils.fillPolyTrans(img=frame,points=[mesh_cords[p] for p in RIGHT_EYEBROW],color=utils.GREEN, opacity=0.4)
+            
+            [cv.circle(frame,mesh_cords[p], 2, utils.GREEN, -1 ) for p in FACE_OVAL]
+            
+            [cv.circle(frame,mesh_cords[p], 2, utils.BLACK, -1 ) for p in LIPS]
 
+            [cv.circle(frame,mesh_cords[p], 2, utils.PINK, -1 ) for p in LEFT_EYE]
+            [cv.circle(frame,mesh_cords[p], 2, utils.BLACK, -1 ) for p in LEFT_EYEBROW]
+            
+            [cv.circle(frame,mesh_cords[p], 2, utils.PINK, -1 ) for p in RIGHT_EYE]
+            [cv.circle(frame,mesh_cords[p], 2, utils.BLACK, -1 ) for p in RIGHT_EYEBROW]
         # calculating the end time of total frames 
         end_time = time.time()- starting_time
 
