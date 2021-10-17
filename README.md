@@ -1,4 +1,4 @@
-# Eyes Tracking with Mediapipe python
+# Eyes Tracking with Mediapipe python :lock: Private
 > *Here we want to estimate the position of eyes using computer vision techniques, we will use simpler approaches which we have used first, but later on we will make that more advance, tracking the pupils with image processing techniques*
 
 
