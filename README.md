@@ -11,10 +11,10 @@ Answer: the Dlib face detection and landmark detection, implementation is quite,
 
 - [x] *Face mesh*
 - [x] *Landmark detection*
-- [ ] *Eye:eye::eye: Extracting Landmarks only*
-- [ ] *Eyes:eye::eye: Blinking Detector*
-- [ ] *Extracting Eyes using Masking Techniques*
-- [ ] *Estimating Position of Eyes :eye::eye:*
+- [x] *Eye:eye::eye: Extracting Landmarks only*
+- [x] *Eyes:eye::eye: Blinking Detector*
+- [x] *Extracting Eyes using Masking Techniques*
+- [x] *Estimating Position of Eyes :eye::eye:*
 
 ### Eyes Landmarks
 
